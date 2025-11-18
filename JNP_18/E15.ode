@@ -1,0 +1,88 @@
+# E15.ode
+
+# This computer program was used in the article "Intrinsic Physiology
+# of Inhibitory Neurons Changes Over Auditory Development" by
+# Briana J. Carroll, Richard Bertram, and Richard L. Hyson,
+# J. Neurophysiology, 119:290-304, 2018. It is a model for neurons
+# at embryonic day 15.
+
+par from=100
+par to=400
+par ip=200
+ipp(t)=if(t<from)then(0)else(if(t>from&t<to)then(ip)else(0))
+
+par C=58.2
+ 
+# Nernst potentials (mV)
+par VL=-46.3	
+par VNa=158.1
+par VK=-97	
+
+# Conductances	
+par gL=7.3
+par gNa=33.8 
+par gLT=3.7		
+par gK=0.2			
+
+# Time constants (mS)
+par taunbar=10
+par tauh=5
+
+# Function constants in mV
+par thetam=-35
+par sigmam=-5
+par thetan=-30
+par sigman=-5
+par thetah=-50
+par sigmah=7
+par thetay=-48
+par sigmay=6
+par thetaz=-71
+par sigmaz=10
+
+#Leak Current
+iL=gL*(V-VL)
+
+#Sodium Current (Na+)
+minf=1/(1+exp((V-thetam)/sigmam))
+hinf=1/(1+ exp((V-thetah)/sigmah))
+iNa=gNa*(minf^3)*h*(V-VNa) 
+
+#Potassium Current (K+)
+ninf=1/(1+ exp((V-thetan)/sigman))
+taun=5*taunbar/cosh((V-thetan)/(2*sigman)) 
+iK=gK*(n^4)*(V-VK) 
+
+# KLT (low-threshold activated potassium channel)
+zinf = (.5)*(1/(1+exp((V-thetaz)/sigmaz))) + .5
+yinf = (1+exp(-(V-thetay)/sigmay))^(-.25)
+tauz = 1000/(exp((v+60)/20) + exp(-(v+60)/8)) + 50
+tauy = 100/(6*exp((v+60)/6) + 16*exp(-(v+60)/45)) + 1.5
+iLT = gLT*y^4*z*(v-vk)
+
+# Differential Equations
+V'=(-iL-iK-iNa-iLT+ipp(t))/C
+y' = (yinf-y)/tauy
+z' = (zinf-z)/tauz
+n'=(ninf-n)/(taun)
+h'=(hinf-h)/(tauh)
+
+#init 
+V(0)=-51.12524
+y(0)=0.7813124
+z(0)=0.5602624
+n(0)=0.01441384
+h(0)=0.5401008
+
+aux sigmah = sigmah
+aux iNa = iNa
+aux iK = iK
+aux iL = iL
+aux ip = ip
+@ dt=0.01, total=500, maxstor=2000000
+
+@ bounds=10000000, xp=t, yp=V
+
+@ xlo=0, xhi=500, ylo=-60, yhi=10
+
+done
