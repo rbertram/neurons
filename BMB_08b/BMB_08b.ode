@@ -1,0 +1,69 @@
+# BMB_08b.ode
+
+# Computer program used in R. Bertram, J. Rhoads, W.P. Cimbora,
+# "A Phantom Bursting Mechanism for Episodic Bursting", Bull. Math.
+# Biol., 70:1979-1993, 2008.
+
+# A phantom bursting model that generates compound bursting. It also 
+# exhibits small oscillations during the silent phase. 
+
+% XPP parameters
+@ meth=cvode, dtmax=1, dt=10, total=420000,t0=-120000, maxstor=100000
+@ bounds=100000000, xp=tsec,  yp=v, toler=1.0e-6, atoler=1.0e-6
+@ xlo=0, xhi=300, ylo=-70, yhi=0, bell=0
+@ nmax=2000, npr=5000, dsmax=0.1, ds=-0.02, parmin=-2,parmax=2
+@ autoxmin=-2,autoxmax=2,autoymin=-60,autoymax=-10
+
+
+# Parameter settings:
+" {autos2=0, s2knot=2} Clamp S2
+" {gs1=20} Bursting with wiggles
+" {gs1=20.5} Regular Bursting
+" {gs1=21.5} Compound with Long First Burst
+" {gs1=22} Compound Bursting
+
+par s2knot=0.49
+params gs1=20, gs2=16
+par lambda=1
+par taus1=1000, taus2=30000
+par ss1=5 
+par ss2=15 
+params vs1=-50,vs2=-40
+params autos2=1
+params autos1=1,s1knot=1
+number gl=25,vl=-40,gca=280,gk=1300
+
+% Initial conditions
+v(0)=-40.0
+n(0)=0.0
+s1(0)=0.9
+s2(0)=0.5
+
+% invisible parameters
+number vca=100, vk=-80, cm=4525
+number tnbar=8.25,vm=-22, vn=-9, sm=7.5, sn=10
+
+# assorted functions
+minf(v) = 1.0/(1.0+exp((vm-v)/sm))
+ninf(v) = 1.0/(1.0+exp((vn-v)/sn))
+taun(v) = tnbar/(1.0+exp((v-vn)/sn))
+s1inf(v) = 1/(1.0+exp((vs1-v)/ss1))
+s2inf(v) = 1/(1.0+exp((vs2-v)/ss2))
+
+% ionic currents
+ica(v) = gca*minf(v)*(v-vca)
+is1(v,s1) = gs1*s1*(v-vk)
+ik(v,n) = gk*n*(v-vk)
+il(v) = gl*(v-vl)
+is2(v,s2) = gs2*s2*(v-vk)
+
+# equations
+v' = -(ica(v)+is1(v,s1)+is2(v,s2)+il(v)+ik(v,n))/cm
+n' = lambda*(ninf(v)-n)/taun(v)
+s1' = autos1*((s1inf(v)-s1)/taus1) + (1-autos1)*(s1knot-s1) 
+s2' = autos2*((s2inf(v)-s2)/taus2) + (1-autos2)*(s2knot-s2) 
+
+# aux s2slope=autos2*((s2inf(v)-s2)/taus2) + (1-autos2)*(s2knot-s2)
+aux tsec = t/1000
+aux tmin = t/(60*1000)
+done

@@ -1,0 +1,110 @@
+# BMB_08b_noisy.ode
+
+# Computer program used in R. Bertram, J. Rhoads,, W.P. Cimbora,
+# "A Phantom bursting Mechanism for Episodic Bursting", Bull. Math.
+# Biol., 70:1979-1993, 2008.
+
+# A phantom bursting model that generates compound bursting. It also 
+# exhibits small oscillations during the silent phase. 
+# Modified to include channel noise in the leak current.
+
+% XPP parameters
+@ meth=backeul, dtmax=1, dt=10, trans=0, total=300000,t0=0, maxstor=100000
+@ bounds=100000000, xp=tsec,  yp=v, toler=1.0e-6, atoler=1.0e-6
+@ xlo=0, xhi=300, ylo=-70, yhi=0, bell=0
+@ nmax=2000, npr=5000, dsmax=0.1, ds=-0.02, parmin=-2,parmax=2
+@ autoxmin=-2,autoxmax=2,autoymin=-60,autoymax=-10
+@ DELAY=20,BUT=QUIT:fq
+%%
+
+only t, v, burst
+
+% Parameter settings:
+" {autos2=0, s2knot=2} Clamp S2
+" {gs1=20} Bursting with wiggles
+" {gs1=20.5} Regular Bursting
+" {gs1=21.5} Compound with Long First Burst
+" {gs1=22} Compound Bursting
+
+% Noise values used in paper:
+% delNoise=3  (Nstoc=1100)
+% delNoise=7  (Nstoc=200)
+% delNoise=17 (Nstoc=35)
+% delNoise=27 (Nstoc=15)
+
+par s2knot=0.47
+params gs1=22, gs2=16
+par lambda=1
+par taus1=1000, taus2=30000
+par noise=1, delNoise=3
+par ss1=5 
+par ss2=15 
+params vs1=-50,vs2=-40
+params autos2=1
+params autos1=1,s1knot=1
+params gleak=41,vleak=-40,gca=280,gk=1300
+par p0=0.2
+%%
+% Initial conditions
+v(0)=-40.0
+n(0)=0.0
+s1(0)=0.9
+s2(0)=0.5
+p(0)=0.14
+%%
+
+% Invisible parameters
+number vca=100, vk=-80, cm=4524
+number tnbar=8.25, vm=-22, vn=-9, sm=7.5, sn=10
+%%
+% assorted functions
+minf(v) = 1.0/(1.0+exp((vm-v)/sm))
+ninf(v) = 1.0/(1.0+exp((vn-v)/sn))
+taun(v) = tnbar/(1.0+exp((v-vn)/sn))
+s1inf(v) = 1/(1.0+exp((vs1-v)/ss1))
+s2inf(v) = 1/(1.0+exp((vs2-v)/ss2))
+%%
+
+% Stochastics
+wiener w
+
+% par alphap=1, taup=100, nstoc=10000
+par alphap=1, taup=100
+
+nstoc=10000/(delNoise^2)
+betap = alphap*(1/p0 - 1)
+aux nstoc=nstoc
+
+sigma=sqrt((alphap*(1-p)+betap*p)/(taup*nstoc))
+% fraction of open leakage channels
+q=(1+p)/2
+aux q=q
+
+%%
+% ionic currents
+ica(v) = gca*minf(v)*(v-vca)
+is1(v,s1) = gs1*s1*(v-vk)
+ik(v,n) = gk*n*(v-vk)
+il(v,p) = gleak*q*(v-vleak)
+is2(v,s2) = gs2*s2*(v-vk)
+%%
+% Equations
+v' = -(ica(v)+is1(v,s1)+is2(v,s2)+il(v,p)+ik(v,n))/cm
+n' = lambda*(ninf(v)-n)/taun(v)
+s1' = autos1*((s1inf(v)-s1)/taus1) + (1-autos1)*(s1knot-s1) 
+s2' = autos2*((s2inf(v)-s2)/taus2) + (1-autos2)*(s2knot-s2) 
+
+p' = (alphap*(1-p)-betap*p)/taup + noise*w*sigma
+%%
+% Auxiliary Equations
+
+# aux s2slope=autos2*((s2inf(v)-s2)/taus2) + (1-autos2)*(s2knot-s2)
+aux Burst = (v>delay(v,15))
+aux tsec = t/1000
+aux tmin = t/(60*1000)
+aux lcurr= il(v,p)
+aux lnoise=p
+aux W=w
+%%
+
+done
