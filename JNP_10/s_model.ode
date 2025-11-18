@@ -1,0 +1,43 @@
+# s_model.ode
+
+# From "Mechanism for the Universal Pattern of Activity in Developing Neuronal Networks", by
+# Tabak, Mascagni, and Bertram. J Neurophysiol, 103:2208-2221, 2010.
+#
+#  Continuous time, firing rate model with 
+#  slow synaptic depression.
+# 
+
+# network parameters
+p w=0.8 ka=-.05, th0=.17
+
+# synaptic depression parameters
+p ths=.2, ks=.05, taus=250
+
+ainf(a) = 1/(1+exp((a)/ka))
+sinf(a) = 1/(1+exp((a-ths)/ks))
+
+# differential equations
+# a : network activity
+# s : synaptic availability
+da/dt = ainf(w*s*a - th0) - a + noise
+ds/dt = (sinf(a) - s)/taus
+
+# noise term
+p n=0.01
+wiener wi
+noise = n*wi
+
+
+# To prevent a from going out of [0, 1], the following can be used
+#p sqdt=0.1
+#global 1 {a-1} {a=a-n*sqdt}
+#global -1 {a} {a=a+n*sqdt}
+
+
+# initial conditions
+init a=.1 s=.3
+
+# simulation options
+@ total=4000 dt=.01 xp=t yp=a xlo=0 xhi=4000 ylo=0 yhi=1
+@ maxstor=2000000 njmp=10 nplot=2 yp2=s bounds=100000
+done

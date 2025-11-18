@@ -1,0 +1,57 @@
+# IF_celladapt_100.ode
+
+# From "Mechanism for the Universal Pattern of Activity in Developing Neuronal Networks", by
+# Tabak, Mascagni, and Bertram. J Neurophysiol, 103:2208-2221, 2010.
+
+# network of 100 I&F cells with heterogeneous input current (Ii)
+# cells have adaptation process tha
+# all to all coupling
+#
+
+# cellular parameters
+p i0=0.5 deli=1.5
+p trefrac=.25 dtr=.05 vreset=0
+p gtha0=0.5 delgtha=1.5 vtha=-1 alphat=0.2 betat=0.004
+
+# synaptic parameters
+p taus=1 tauf=.1
+p gsyn=1.4 vsyn=5
+
+# create the table of applied currents Ii
+#table iapp % 100 0 99 ran(1)*(deli)+i0
+table iapp % 100 0 99 i0+t*deli/99
+
+# create the table of adaptation conductance gthai
+table gtha % 100 0 99 ran(1)*(delgtha)+gtha0
+
+
+# differential equations
+#v[i] membrane potential of cell i
+#a[i] synaptic drive from cell i
+#tha[i] activation of adaptation in cell i
+#tr[i] time of last spike from cell i
+v[0..99]'=(-v[j] -gsyn*(atot-a[j]/100)*(v[j]-vsyn) -gtha([j])*tha[j]*(v[j]-vtha) +iapp([j]))*heav(t-(tr[j]+trefrac))
+tr[0..99]'=0
+a[0..99]'=heav((tr[j]+dtr)-t)*(1-a[j])/tauf - a[j]/taus
+tha[0..99]'=alphat*heav((tr[j]+dtr)-t)*(1-tha[j]) - betat*tha[j]
+
+# synaptic drive to all cells
+atot=sum(0,99)of(shift(a0,i'))/100
+
+# auxiliary variables for output
+aux ave=atot
+aux thatot=sum(0,99)of(shift(tha0,i'))/100
+
+# only output these variables when running in silent mode
+only t ave thatot
+
+# initial conditions
+init v[0..99]=0 tr[j]=-5 a[j]=0.01 tha[j]=.02
+
+# reset of membrane potential after crossing firing threshold
+global 1 {v[0..99]-1} {v[j]=vreset;tr[j]=t}
+
+# simulation options
+@ total=2000, bounds=1000000 back=white maxstor=2200000 yp=ave
+@ dt=0.001 njmp=100 xlo=0 xhi=2000 ylo=0 yhi=0.8 nplot=2 yp2=thatot
+done

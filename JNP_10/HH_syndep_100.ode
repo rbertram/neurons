@@ -1,0 +1,60 @@
+# HH_syndep_100.ode 
+
+# From "Mechanism for the Universal Pattern of Activity in Developing Neuronal Networks", by 
+# Tabak, Mascagni, and Bertram. J Neurophysiol, 103:2208-2221, 2010.
+
+# network of 100 HH (reduced) cells with heterogeneous input current (Ii)
+# all to all coupling with synaptic depression
+#
+
+# cellular parameters
+p i0=-10. deli=15
+p vna=115  vk=-12  vl=10.6  gnabar=36  gkbar=12  gl=0.1
+p h0=0.8 
+
+# synaptic parameters
+p taus=10 tauf=1
+p gsyn=3.6 vsyn=70 
+p alphad=0.0015 betad=0.12
+p Vthresh=40 kv=1
+
+# create a table of applied currents Ii
+table iapp % 100 0 99 i0+t*deli/99
+
+# rate constants and steady state activation function for Na+ and K+ currents
+am(v)=.1*(25-v)/(exp(.1*(25-v))-1)
+bm(v)=4.0*exp(-v/18)
+minf(v)=am(v)/(am(v)+bm(v))
+bn(v)=.125*exp(-v/80)
+an(v)=.01*(10-v)/(exp(.1*(10-v))-1.0)
+
+# synaptic activation
+fsyn(V) = 1./(1+exp((Vthresh-V)/kv))
+
+# differential equations
+# v[i] membrane potential of cell i
+# n[i] activation of K+ conductance for cell i
+# a[i] synaptic drive from cell i
+# s[i] synaptic recovery for terminals from cell i
+v[0..99]'= -gl*(v[j]-vl) - gnabar*minf(v[j])^3*(h0-n[j])*(v[j]-vna) -gkbar*n[j]^4*(v[j]-vk) -gsyn*(atot-a[j]*s[j]/100)*(v[j]-vsyn) + iapp([j])
+n[0..99]'=an(v[j])-(an(v[j])+bn(v[j]))*n[j]
+a[0..99]'=fsyn(v[j])*(1-a[j])/tauf - a[j]/taus
+s[0..99]'=alphad*(1-s[j])-betad*fsyn(v[j])*s[j]
+
+# synaptic drive to all cells
+atot=sum(0,99)of(shift(s0,i')*shift(a0,i'))/100
+
+# auxiliary variables for output
+aux ave=sum(0,99)of(shift(a0,i'))/100
+aux stot=sum(0,99)of(shift(s0,i'))/100
+
+# only output these variables when running in silent mode
+only t ave stot
+
+# initial conditions
+init v[0..99]=0 n[j]=0 a[j]=0.01 s[j]=.25
+
+# simulation options
+@ total=8000, bounds=100000 back=white maxstor=2200000 yp=ave
+@ dt=0.01 njmp=10 xlo=0 xhi=8000 ylo=0 yhi=0.9 nplot=2 yp2=stot
+d
