@@ -1,0 +1,46 @@
+# nmodel.ode
+
+# Two-variable Hodgkin-Huxley model with m=minf and h=1
+
+# From "Determining the Contributions of Divisive and Subtractive Feedback in the
+# Hodgkin-Huxley Model", Sengul, Clewley, Bertram, Tabak. J. Comput. Neurosci.,
+# 37:403-415, 2014.
+
+
+# Initial conditions
+init v=-60,n=0.518
+
+# System parameters
+params iapp=65, cm=1
+params gnabar=12, gkbar=36, gl=0.3
+params vna=50, vk=-77, vl=-54.4, h0=1
+
+# Alpha and beta functions
+am   = 0.1*(v+40)/( 1 - exp(-(v+40)/10) )
+bm   = 4*exp(-(v+65)/18)
+m    = am/(am+bm)
+taum = 1/(am+bm)
+
+an   = 0.01*(v + 55)/(1 - exp(-(v + 55)/10))
+bn   = 0.125*exp(-(v + 65)/80)
+ninf = an/(an+bn)
+taun = 1/(an+bn)
+
+# Ionic currents
+ina = gnabar * m^3 *(h0)* (v-vna)
+ik  = gkbar * n^4 * (v-vk)
+il  = gl * (v-vl)
+
+# Differential equations
+v' =  ( iapp - ina - ik - il ) / cm
+n' =  (ninf - n)/taun
+
+@ maxstor=1200000
+@ total=100, dt=0.01, bounds=10000
+@ method=Runge-Kutta, toler=0.0000001, dtmin=0.00000001, dtmax=0.5
+@ xlo=0, xhi=100, ylo=-80, yhi=40
+# AUTO stuff
+@ Nmax=500, NPr=200, ParMin=-50, ParMax=300
+@ AutoXMin=-50, AutoXMax=300
+@ AutoYMin=-80, AutoYMax=50
+done

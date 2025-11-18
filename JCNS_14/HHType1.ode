@@ -1,0 +1,59 @@
+# HHType1.ode
+
+# Full Hodgkin-Huxley model with Type 1 dynamics
+
+# From Sengul, Clewley, Bertram, Tabak. J. Comput. Neurosci., 37:403-415, 2014.
+
+# Initial conditions
+init v=-65, m=0.052, h=0.596, n=0.317
+init tup=0, tdown=0, dur=0, int=0
+
+# System parameters
+par vna=50,vk=-100,vl=-67,gna=100,gk=80,gl=0.1,c=1,i=3
+par tauh=0.33,taun=1,taum=1
+
+# Alpha and beta functions
+am(v) =  .32*(v+54)/(1-exp(-(v+54)/4))
+bm(v) =  0.28*(v+27)/(exp((v+27)/5)-1)
+ah(v) =  .128*exp(-(v+50)/18)
+bh(v) =  4/(1+exp(-(v+27)/5))
+an(v) =  .032*(v+52)/(1-exp(-(v+52)/5))
+bn(v) =  .5*exp(-(v+57)/40)
+
+# Infinity and time constant functions
+minf(v) = am(v)/(am(v)+bm(v))
+hinf(v) = ah(v)/(ah(v)+bh(v))
+ninf(v) = an(v)/(an(v)+bn(v))
+tn(v)   = taun/(an(v)+bn(v))
+th(v)	= tauh/(ah(v)+bh(v))
+tm(v)	= taum/(am(v)+bm(v))
+
+# Differential equations for system variables
+dv/dt=(I - gna*h*(v-vna)*m^3-gk*(v-vk)*n^4-gl*(v-vl))/c
+dh/dt=-(h-hinf(v))/th(v)
+dn/dt=-(n-ninf(v))/tn(v)
+dm/dt=-(m-minf(v))/tm(v)
+
+# Differential equations for voltage reset
+dtup/dt = 0
+dtdown/dt = 0
+ddur/dt = 0
+dint/dt = 0
+
+aux INa	  =	abs(gna*h*(v-vna)*m^3)
+aux IK	  =	abs(gk*(v-vk)*n^4)
+aux ILeak =	abs(I-gl*(v-vl))
+aux dVdt  =     (I - gna*h*(v-vna)*m^3-gk*(v-vk)*n^4-gl*(v-vl))/c
+
+global 1 {v+40} {tup=t;int=t-tdown}
+global -1 {v+40} {tdown=t;dur=t-tup}
+
+@ maxstor=120000
+@ total=120, dt=0.01, bounds=1000000
+@ method=Runge-Kutta, toler=0.0000001, dtmin=0.000001, dtmax=1
+@ xlo=0, xhi=100, ylo=-80, yhi=30
+# AUTO stuff
+@ Nmax=500, NPr=200, ParMin=-50, ParMax=300
+@ AutoXMin=-5, AutoXMax=190
+@ AutoYMin=-80, AutoYMax=35
+done

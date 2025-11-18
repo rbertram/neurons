@@ -1,0 +1,62 @@
+# HHType2.ode
+
+# Full Hodgkin-Huxley model with Type 2 dynamics
+
+# From "Determining the Contributions of Divisive and Subtractive Feedback in the
+# Hodgkin-Huxley Model", Sengul, Clewley, Bertram, Tabak. J. Comput. Neurosci.,
+# 37:403-415, 2014.
+
+
+# Initial conditions
+init v=-65, n=0.317, m=0.052, h=0.596
+init tup=0,tdown=0,dur=0,int=0
+
+# System parameters
+par vna=50,vk=-77,vl=-54.4,gna=120,gk=36,gl=0.3,c=1,i=20
+par tauh=1,taun=1,taum=1
+
+# Alpha and beta functions
+am =  .1*(v+40)/(1-exp(-(v+40)/10))
+bm =  4*exp(-(v+65)/18)
+ah =  .07*exp(-(v+65)/20)
+bh =  1/(1+exp(-(v+30)/10))
+an =  .01*(v+55)/(1-exp(-(v+55)/10))
+bn =  .125*exp(-(v+65)/80)
+
+# Infinity and time constant functions
+minf = am/(am+bm)
+hinf = ah/(ah+bh)
+ninf = an/(an+bn)
+tn   = taun/(an+bn)
+th   = tauh/(ah+bh)
+tm   = taum/(am+bm)
+
+# Differential equations for system variables
+dv/dt=(I - gna*h*(v-vna)*m^3-gk*(v-vk)*n^4-gl*(v-vl))/c
+dh/dt=-(h-hinf)/th
+dn/dt=-(n-ninf)/tn
+dm/dt=-(m-minf)/tm
+
+# Differential equations for voltage reset
+dtup/dt = 0
+dtdown/dt = 0
+ddur/dt = 0
+dint/dt = 0
+
+aux INa	  =	abs(gna*h*(v-vna)*m^3)
+aux IK	  =	abs(gk*(v-vk)*n^4)
+aux ILeak =	abs(I-gl*(v-vl))
+aux dVdt  =     (I - gna*h*(v-vna)*m^3-gk*(v-vk)*n^4-gl*(v-vl))/c
+
+global 1 {v+40} {tup=t;int=t-tdown}
+global -1 {v+40} {tdown=t;dur=t-tup}
+
+@ maxstor=120000
+@ total=220, dt=0.01, bounds=1000000
+@ method=Runge-Kutta, toler=0.0000001, dtmin=0.000001, dtmax=1
+@ xlo=0, xhi=100, ylo=-80, yhi=30
+# AUTO stuff
+@ Nmax=500, NPr=200, ParMin=-50, ParMax=300
+@ AutoXMin=-5, AutoXMax=190
+@ AutoYMin=-80, AutoYMax=35
+done
