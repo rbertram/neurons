@@ -1,0 +1,39 @@
+#  PLoS_11.ode
+
+#  Continuous time, firing rate model with 
+#  slow synaptic depression AND cellular adaptation.
+
+# Used to make all figures in J. Tabak, J. Rinzel, R. Bertram,
+# "Quantifying the Relative Contributions of Divisive and Subtractive
+# Feedback to Rhythm Generation", PLoS Computational Biology, 
+# 7(4):e1001124. doi:10.1371/journal.pcbi.1001124.
+
+# ======================================================================
+
+da/dt = (ainf(w*s*a-g*tha)-a)/taua
+ds/dt = (sinf(a)-s)/taus
+dtha/dt = (thainf(a)-tha)/tautha
+
+ainf(i) = 1/(1+exp((i-th0)/ka))
+sinf(a) = 1/(1+exp((a-ths)/ks))
+thainf(a) = 1/(1+exp((a-thth)/kth))
+
+
+par ka=-.05 ,taua=1, th0=0
+par ths=.3, ks=.05, taus=250, w=1
+par thth=.3 ,kth=-.05, tautha=250, g=1
+
+dtup/dt = 0
+dtdown/dt = 0
+ddur/dt = 0
+dint/dt = 0
+
+global  1 {a-0.35} {tup=t;int=t-tdown}
+global -1 {a-0.35} {tdown=t;dur=t-tup}
+
+init a=0 s=.7 tha=.3 tup=0 tdown=0 dur=0 int=0
+@ total=4000 dt=.05 xp=t yp=a xlo=0 xhi=2500 ylo=0 yhi=1
+@ maxstor=2000000 njmp=2 nplot=3 yp2=s yp3=tha bounds=100000
+
+done
+
