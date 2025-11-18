@@ -1,0 +1,70 @@
+% ramp_regression.ode
+
+% Computer code for the publication "Fast-Slow Analysis as a Technique for Understanding the 
+% Neuronal Response to Current Ramps", by K. Gasior, K. Korshunov, P. Q. Trombley, and R. Bertram, 
+% Journal of Computational Neuroscience, DOI: 10.1007/s10827-021-00799-0, 2021.
+
+% This program was used to make current ramp diagrams that replace the slow variable
+% "z" using linear regression. Used for Figs. 6, 7.
+
+% initial conditions
+v(0)=-75.20158
+n(0)=0.1854115
+
+% Conductances and other parameters
+num C=1, gK=40, gNa=120, gL=0.3
+num VK=-77, VNa=55, VL=-44.4
+num vmh=-40, sm=9, vz=-45, sz=10, vnh=-53
+num sn=15, taun0=1.1, taun1=4.7, thetan=-53, sntau=50
+
+% Applied current ramp
+par ton=100,duration=200
+par Iap0=0,del_Iap=1300
+slope = del_Iap/duration
+toff=ton+duration
+Iap = Iap0+slope*(heav(t-ton)-heav(t-toff))*(t-ton)
+
+% Parameters with gKS=5 nS:
+ 
+par gKS=5
+par B1=0.0006882, B0=0.09883387
+
+% Parameters with gKS=110 nS:
+ 
+% par gKS=110
+% par B1=0.0002766, B0=0.04652346
+
+% Regression formula
+z = B0+B1*Iap
+
+% Equilibrium functions
+
+minf = 1./(1+exp(-(V-vmh)/sm))
+ninf = 1./(1+exp(-(V-vnh)/sn))
+
+% Time constants
+taun = taun0 + taun1*exp(-(V-thetan)^2/sntau)
+
+% Currents   
+h=0.1-0.5*(n-0.8)
+INa = gNa*(minf^3)*h*(V-VNa)
+IK = gK*n^4*(V-VK)
+IL = gL*(V-VL)
+IKS = gKS*z*(V-VK)
+
+% differential equations
+v' = -(IK+INa+IL+IKS-Iap)/C
+n' = (ninf-n)/taun
+
+% XPP parameters
+% Uses the Dormand-Prince solver (DoPri(8)3), which is related to RK
+% and is adaptive.
+@ maxstor=120000
+@ total=600, dt=0.05, bounds=1000000, nout=2, bell=0
+@ method=8, toler=0.000000001, atoler=0.000000001, dtmin=0.000001, dtmax=1
+@ xp=tsec, yp=V
+@ xlo=0, xhi=600, ylo=-80, yhi=60
+
+aux Iap=Iap
+aux z=z
+done
